@@ -1,0 +1,91 @@
+# ============================================================
+# Tribhuban Concepts — Root .gitignore
+# Protects secrets, build artifacts, OS files, IDE configs
+# ============================================================
+
+# ---- Environment & Secrets ----
+.env
+.env.*
+!.env.example
+.env.local
+.env.development
+.env.staging
+.env.production
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+*.secret
+*.credentials
+service-account*.json
+
+# ---- OS Files ----
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+
+# ---- IDE / Editor ----
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+
+# ---- Node.js / Next.js ----
+node_modules/
+.next/
+out/
+.vercel/
+.turbo/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm/
+.yarn/
+
+# ---- Flutter / Dart (practice apps — not production) ----
+Tribhuban_App/**/build/
+Tribhuban_App/**/.dart_tool/
+Tribhuban_App/**/.flutter-plugins-dependencies
+Tribhuban_App/**/.pub-cache/
+Tribhuban_App/**/.pub/
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# ---- Build Artifacts ----
+dist/
+build/
+coverage/
+.cache/
+*.tgz
+*.tsbuildinfo
+
+# ---- Logs ----
+*.log
+logs/
+
+# ---- Testing ----
+.nyc_output/
+test-results/
+
+# ---- Docker ----
+docker-compose.override.yml
+
+# ---- Misc ----
+*.bak
+*.tmp
+*.temp
