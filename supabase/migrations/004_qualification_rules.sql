@@ -40,9 +40,9 @@ INSERT INTO qualification_rules (id, version, rules_json, is_active) VALUES
             "other_documented_commercial_factors"
         ],
         "rules_logic": {
-            "qualified": "Current sales >= ₹1 lakh (or tier >= ₹1–2 lakh) AND Tribhuban potential >= ₹1 lakh (with ₹5L+ as prime benchmark)",
+            "qualified": "Current sales >= ₹1 lakh (or tier >= ₹1–2 lakh) eligible for assessment (with ₹5L+ potential as primary benchmark)",
             "exception_review": "Current sales < ₹1 lakh AND estimated Tribhuban potential >= ₹5 lakh (primary benchmark) with verified commercial exception factors and documented commercial notes",
-            "not_target": "Current sales < ₹1 lakh and potential < ₹5 lakh, OR current sales < ₹1 lakh without eligible exception factors, OR potential below minimum threshold",
+            "not_target": "Current sales < ₹1 lakh and potential < ₹5 lakh, OR current sales < ₹1 lakh without eligible exception factors",
             "needs_validation": "Prefer not to say / Not sure / Missing critical channel inputs / Incomplete exception notes"
         }
     }'::jsonb,

@@ -2,63 +2,77 @@
 
 ## 1. Relational Schema Standards
 
-All primary database tables are defined using standard PostgreSQL with UUID primary keys, check constraints, indexes on foreign keys and statuses, and created/updated timestamps.
+All primary database tables are defined using standard PostgreSQL with UUID primary keys, check constraints, foreign keys with cascade controls, indexes on foreign keys and statuses, and created/updated timestamps.
 
-Migrations live in `Tribhuban Website/supabase/migrations/`:
-- `001_initial_schema.sql`: Core tables, relationships, and constraints.
-- `002_rls_policies.sql`: Row Level Security policies for Admin, Coordinator, and Reviewer.
+Migration package (`supabase/migrations/`):
+- `001_initial_schema.sql`: Core 20 tables, relationships, and constraints.
+- `002_rls_policies.sql`: Comprehensive Row Level Security policies across all 20 tables for Admin, Coordinator, and Reviewer.
 - `003_seed_survey_v1.sql`: Question and option schema for `survey_v1`.
 - `004_qualification_rules.sql`: Rule configuration for `qualification_rules_v1`.
 
 ---
 
-## 2. Table Specifications
+## 2. Table Specifications (20 Tables)
 
-### `users`
-- Maps application accounts to Supabase Auth.
-- Columns: `id` (UUID), `email` (TEXT UNIQUE), `full_name` (TEXT), `phone` (TEXT), `role_id` (TEXT REFERENCES roles(id)), `is_active` (BOOLEAN).
+### User Directory & Authentication
+1. **`roles`**: System role definitions (`admin`, `coordinator`, `reviewer`).
+2. **`users`**: Application user directory mapped to Supabase Auth (`id`, `email`, `full_name`, `phone`, `role_id`, `is_active`).
+3. **`user_roles`**: User role junction supporting multi-role assignment and history tracking.
 
-### `retailers`
-- Primary business account record.
-- Columns: `id` (UUID), `business_name` (TEXT), `owner_name` (TEXT), `phone` (TEXT), `email` (TEXT), `address` (TEXT), `city` (TEXT), `state` (TEXT), `pincode` (TEXT), `business_type` (TEXT), `years_in_business` (INT), `gst_number` (TEXT), `status` (TEXT CHECK), `created_by` (UUID REFERENCES users(id)), `created_at`, `updated_at`.
-- Statuses:
-  `QUALIFICATION_PENDING`, `QUALIFIED`, `SURVEY_IN_PROGRESS`, `SURVEY_COMPLETED`, `INTERNAL_REVIEW`, `FOLLOW_UP_REQUIRED`, `READY_FOR_NEXT_STAGE`, `EXCEPTION_REVIEW`, `NOT_TARGET`, `NEEDS_VALIDATION`.
+### Retailer Core & Assignments
+4. **`retailers`**: Primary business account record with 10-state lifecycle status (`QUALIFICATION_PENDING`, `QUALIFIED`, `SURVEY_IN_PROGRESS`, `SURVEY_COMPLETED`, `INTERNAL_REVIEW`, `FOLLOW_UP_REQUIRED`, `READY_FOR_NEXT_STAGE`, `EXCEPTION_REVIEW`, `NOT_TARGET`, `NEEDS_VALIDATION`).
+5. **`retailer_assignments`**: Assignment mapping between Coordinators and Retailers with active flags.
 
-### `qualification_assessments`
-- Stores results of pure rules engine evaluation.
-- Columns: `id`, `retailer_id`, `rule_version` (e.g. `'qualification_rules_v1'`), `monthly_grocery_sales`, `tribhuban_sales_potential`, `potential_sales_channels` (TEXT[]), `operational_capacity`, `exception_grounds` (TEXT[]), `exception_notes`, `result_state`, `assessed_by`, `created_at`.
+### Qualification Engine
+6. **`qualification_assessments`**: Pure rules evaluation outputs tagged with `rule_version` (`monthly_grocery_sales`, `tribhuban_sales_potential`, `potential_sales_channels`, `operational_capacity`, `exception_grounds`, `result_state`).
+7. **`qualification_rules`**: Dynamic configuration registry for versioned qualification logic.
 
-### `survey_sessions` & `survey_responses`
-- Manages survey progression and question answers.
-- `survey_sessions`: `id`, `retailer_id`, `survey_version`, `current_step`, `status` (`in_progress`, `completed`, `submitted`), `last_saved_at`.
-- `survey_responses`: `id`, `session_id`, `retailer_id`, `question_id`, `answer_value` (JSONB).
+### Survey Data-Driven Engine
+8. **`survey_questions`**: Versioned catalog of survey questions with section and validation rules.
+9. **`survey_options`**: Options catalog for single/multi-choice survey questions.
+10. **`survey_sessions`**: Survey session autosave state (`current_step`, `status`, `last_saved_at`).
+11. **`survey_responses`**: Normalized question-level response values stored as JSONB.
 
-### `retailer_concerns` & `retailer_suggestions`
-- Detailed qualitative commercial data from survey steps 3 and 4.
-- `retailer_concerns`: `concern_categories` (TEXT[]), `main_concern_description` (TEXT).
-- `retailer_suggestions`: `useful_expectations` (TEXT), `platform_expectations` (TEXT[]), `model_change_suggestion` (TEXT).
+### Qualitative Commercial Insights
+12. **`retailer_concerns`**: Section 3 qualitative commercial concerns (`concern_categories`, `main_concern_description`).
+13. **`retailer_suggestions`**: Section 4 business model improvement suggestions (`useful_expectations`, `platform_expectations`, `model_change_suggestion`).
 
-### `consents`
-- Mandated audit record of retailer consent.
-- Columns: `retailer_id`, `contact_consent` (BOOLEAN), `policy_acknowledgement` (BOOLEAN), `follow_up_permission` (BOOLEAN), `policy_version`, `disclaimer_text`, `consented_at`.
+### Compliance, Consents & Legal
+14. **`consents`**: Retailer explicit consent audit record (`contact_consent`, `policy_acknowledgement`, `follow_up_permission`, `policy_version`, `disclaimer_text`).
+15. **`policy_acceptances`**: User and retailer legal terms acceptance history.
 
-### `internal_assessments`
-- **Confidential internal review record.** Completely hidden from Coordinators and Retailers via RLS.
-- Columns: `retailer_id` (UNIQUE), `retailer_potential` (`High`, `Medium`, `Low`, `Needs review`), `expected_tribhuban_potential` (`₹5–10 lakh`, `₹10 lakh+`, `Below target`, `Uncertain`), `next_action` (`Proceed`, `Internal review`, `Follow-up required`, `Not target currently`), `internal_notes`, `assessed_by`.
+### Commercial Review & Coordination
+16. **`internal_assessments`**: **Confidential commercial review record.** Strictly hidden from Coordinators and Retailers via RLS.
+17. **`follow_ups`**: Actionable scheduling records (`assigned_to`, `due_date`, `status`, `priority`).
+18. **`communication_history`**: Interaction logs across channels (`IN_PERSON`, `PHONE`, `WHATSAPP`, `EMAIL`).
+19. **`partner_status`**: Third-party coordination status tracking (coordination only; no lending/underwriting authority).
 
-### `audit_events`
-- Immutable append-only audit trail.
-- Columns: `id`, `actor_id`, `actor_role`, `event_type`, `entity_type`, `entity_id`, `metadata` (JSONB, sanitized), `ip_address`, `created_at`.
+### Compliance & Security Auditing
+20. **`audit_events`**: Immutable append-only audit trail (`actor_id`, `actor_role`, `event_type`, `entity_type`, `entity_id`, `metadata`, `ip_address`).
 
 ---
 
-## 3. Row Level Security (RLS) Matrix
+## 3. Row Level Security (RLS) Coverage Matrix (All 20 Tables)
 
-| Table | Admin | Reviewer | Coordinator |
-|---|---|---|---|
-| `users` | ALL | SELECT Self | SELECT Self |
-| `retailers` | ALL | SELECT ALL | SELECT / INSERT Assigned Only |
-| `qualification_assessments` | ALL | SELECT ALL | SELECT / INSERT Assigned Only |
-| `survey_sessions` | ALL | SELECT ALL | SELECT / UPDATE Assigned Only |
-| `internal_assessments` | ALL | ALL | **NO ACCESS** |
-| `audit_events` | SELECT ALL | NO ACCESS | NO ACCESS (INSERT via logger only) |
+| # | Table | Admin | Reviewer | Coordinator | Public / Non-Auth |
+|---|---|---|---|---|---|
+| 1 | `roles` | ALL | SELECT | SELECT | NO ACCESS |
+| 2 | `users` | ALL | SELECT Self | SELECT Self | NO ACCESS |
+| 3 | `user_roles` | ALL | SELECT Self | SELECT Self | NO ACCESS |
+| 4 | `retailers` | ALL | SELECT ALL | SELECT / INSERT / UPDATE Assigned Only | NO ACCESS |
+| 5 | `retailer_assignments` | ALL | SELECT ALL | SELECT Assigned Only | NO ACCESS |
+| 6 | `qualification_assessments` | ALL | SELECT ALL | ALL Assigned Only | NO ACCESS |
+| 7 | `survey_sessions` | ALL | SELECT ALL | ALL Assigned Only | NO ACCESS |
+| 8 | `survey_questions` | ALL | SELECT | SELECT | NO ACCESS |
+| 9 | `survey_options` | ALL | SELECT | SELECT | NO ACCESS |
+| 10 | `survey_responses` | ALL | SELECT ALL | ALL Assigned Only | NO ACCESS |
+| 11 | `retailer_concerns` | ALL | SELECT ALL | ALL Assigned Only | NO ACCESS |
+| 12 | `retailer_suggestions` | ALL | SELECT ALL | ALL Assigned Only | NO ACCESS |
+| 13 | `consents` | ALL | SELECT ALL | ALL Assigned Only | NO ACCESS |
+| 14 | `policy_acceptances` | ALL | SELECT / INSERT Self | SELECT / INSERT Self | NO ACCESS |
+| 15 | `internal_assessments` | ALL | ALL | **NO ACCESS (STRICT)** | NO ACCESS |
+| 16 | `follow_ups` | ALL | SELECT ALL | ALL Assigned Only | NO ACCESS |
+| 17 | `communication_history` | ALL | SELECT ALL | ALL Assigned Only | NO ACCESS |
+| 18 | `partner_status` | ALL | ALL | SELECT Assigned Only | NO ACCESS |
+| 19 | `qualification_rules` | ALL | SELECT | SELECT | NO ACCESS |
+| 20 | `audit_events` | SELECT ALL | NO ACCESS | NO ACCESS (INSERT Self Only) | NO ACCESS |
